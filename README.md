@@ -18,6 +18,10 @@ The process includes:
 6. Creating a new matrix using the binary matrix of the original image as a template to place the input pixel and the blank pixels
 7. Output the image
 
+### Settings
+1. IMG_PX_SCALE - percentage of resolution you want to scale down to
+2. CONTRAST_THRESHOLD - value between 0 and 255, larger values make the output darker.
+
 ### Possible Modifications
 - Instead of a binary matrix, generate a range of values based on threshold ranges. Then, substitute the values with different input pixels.
 - Improve program execution. There should be an easier way to map the pixels onto the matrix without the loops.
