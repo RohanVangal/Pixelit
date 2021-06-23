@@ -1,56 +1,60 @@
-# -*- coding: utf-8 -*-
 """
-Created on Fri Mar 27 15:37:51 2020
-
-@author: RoSaVa
+@Brief:         Accepts input image, converts it to greyscale and pixelaltes it.
+                A new image is then generated placing circles of a size proportional to each pixel
+@created:       23/06/2021
+@author:        RoSaVa
+@note:          Source image: https://www.gmcsubscriptions.com/product/black-white-issue-231-aug-19/
 """
 import numpy as np
 import cv2
+import cairo
+import math
 
 # Source image paths
 IMG_PATH = 'srcimg.jpg'
-PIX_PATH = 'pix.jpg'
-
 # Degree of pixelation: Image is scaled down to the following percentage
-IMG_PX_SCALE = 2
+IMG_PX_SCALE = 10
 
-# Contrast value- the lower the value the brighter the image
-CONTRAST_THRESHOLD = 50
-
-# Read pixel source and convert to grayscale
-pix = cv2.imread(PIX_PATH,cv2.IMREAD_GRAYSCALE)
-pix = pix.astype('int')
-# 'White' pixel
-pix_zeros = np.ones(pix.shape, dtype=int)*255
 # Read original image in grayscale
 img = cv2.imread(IMG_PATH,cv2.IMREAD_GRAYSCALE)
 imgpx_scale = IMG_PX_SCALE/100
 img_h, img_w = img.shape
 
-# Resize image
+# Pixelated image size
 px_size =  ((int)(img_w*imgpx_scale)),((int)(img_h*imgpx_scale))
+w,h = px_size
+#Resize image
 imgpx_resize = cv2.resize(img, px_size, interpolation=cv2.INTER_LINEAR)
 
-# Convert image into a binary map based on threshold (contrast value)
-(thresh, imgpx_bin) = cv2.threshold(imgpx_resize, CONTRAST_THRESHOLD, 1, cv2.THRESH_BINARY)
+# #Size of square that replaces each pixel, in pixels
+BLOCK_SIZE = 50
+SIZE_CORRECTION = -3
 
-# Filling a matrix with input pixels based on binary map
-w,h = px_size
-final_img = []
+# Colour settings of the circles value 0-1 (decimal)
+COLOUR_R = 1
+COLOUR_G = 1
+COLOUR_B = 1
+
+#Setting up Cairo surface to draw on
+surface = cairo.ImageSurface(cairo.FORMAT_RGB24, w*BLOCK_SIZE, h*BLOCK_SIZE)
+ctx = cairo.Context(surface)
+
+# ctx.set_source_rgb(1, 1, 1)             # white background
+ctx.set_source_rgba(0.0, 0.0, 0.0, 0.0) # transparent black background
+ctx.rectangle(0, 0, w*BLOCK_SIZE, h*BLOCK_SIZE)
+ctx.fill()
 
 for i in range (h):
-    temp = [None] * w
+    y = (int)((i+0.5)*BLOCK_SIZE)
     for j in range (w):
-        if imgpx_bin[i][j] == 0:
-            temp [j] = pix
-        else:
-            temp [j] = pix_zeros
-    # concatenate along vertical axis        
-    temp2 = np.concatenate(temp,axis = 1)
-    if i == 0:
-        final_img = temp2
-    else:
-        # concatenate along horizontal axis 
-        final_img = np.concatenate((final_img,temp2))
+        x = (int)((j+0.5)*BLOCK_SIZE)
 
-cv2.imwrite('output.jpg', final_img)
+        #Setting Diameter
+        dia = (imgpx_resize[i][j]/255)*(BLOCK_SIZE + SIZE_CORRECTION)
+        #Drawing circle
+        ctx.arc(x, y, dia, 0, 2*math.pi)
+        ctx.set_source_rgb(COLOUR_R, COLOUR_G, COLOUR_B)
+        ctx.fill()  
+
+#Save Cairo surface as png
+surface.write_to_png('output.jpg')
